@@ -1,14 +1,40 @@
 'use client'
 
-import { User } from '@prisma/client'
+import { Chat, User } from '@prisma/client'
 import { Button } from '../ui/button'
 import Image from 'next/image'
+import { ISessionUser } from '@/types/session-user'
+import { useRouter } from 'next/navigation'
+import { api } from '@/lib/axios'
 
 interface UserCardProps {
-  user: User
+  sessionUser: ISessionUser
+  user: User & { chatsAsReceiver: Chat[] }
 }
 
-export const UserCard = ({ user }: UserCardProps) => {
+export const UserCard = ({ sessionUser, user }: UserCardProps) => {
+  const { push } = useRouter()
+
+  const chat = user.chatsAsReceiver.find(
+    (chat) => chat.receiverId === user.id && chat.senderId === sessionUser.id,
+  )
+
+  const handleOpenChat = async () => {
+    if (chat) {
+      push(`/chat/${chat.id}`)
+    } else {
+      await api
+        .post<{ chatAsSender: Chat }>('/api/chat', {
+          receiverId: user.id,
+          senderId: sessionUser.id,
+        })
+        .then((response) => {
+          push(`/chat/${response.data.chatAsSender.id}`)
+        })
+        .catch((error) => console.error(error))
+    }
+  }
+
   return (
     <div className="flex flex-col items-center gap-2">
       <Image
@@ -25,7 +51,9 @@ export const UserCard = ({ user }: UserCardProps) => {
       </div>
 
       <div className="flex">
-        <Button className="rounded">Message</Button>
+        <Button className="rounded" onClick={handleOpenChat}>
+          Message
+        </Button>
       </div>
     </div>
   )

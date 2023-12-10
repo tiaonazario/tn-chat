@@ -15,6 +15,9 @@ export async function getUsers() {
           id: sessionUser.id,
         },
       },
+      include: {
+        chatsAsReceiver: true,
+      },
     })
     return users
   } catch (error) {

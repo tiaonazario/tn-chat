@@ -1,6 +1,5 @@
-import Image from 'next/image'
 import Link from 'next/link'
-import { LogOut } from 'lucide-react'
+import { LogOut, Menu } from 'lucide-react'
 
 import { ActiveLink } from '@/components/own/active-link'
 import { routes } from '@/routes'
@@ -16,8 +15,8 @@ interface SidebarProps {
 
 export const Sidebar = ({ sessionUser }: SidebarProps) => {
   return (
-    <div className="flex flex-col items-start gap-2 border-r p-4 transition-all">
-      <Image src="/chat-message.svg" width={40} height={40} alt="logo" />
+    <div className="flex flex-col items-start gap-2 border-r p-4 text-muted-foreground transition-all">
+      <Menu className="h-8 w-8 self-center" />
 
       <Separator />
 

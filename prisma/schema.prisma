@@ -42,6 +42,14 @@ model Session {
   @@index([userId])
 }
 
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
 model User {
   id            String    @id @default(uuid())
   name          String
@@ -51,12 +59,46 @@ model User {
 
   accounts Account[]
   sessions Session[]
+
+  chatsAsReceiver    Chat[]    @relation("userAsReceiver")
+  chatsAsSender      Chat[]    @relation("userAsSender")
+  messagesAsReceiver Message[] @relation("userAsReceiver")
+  messagesAsSender   Message[] @relation("userAsSender")
 }
 
-model VerificationToken {
-  identifier String
-  token      String   @unique
-  expires    DateTime
+model Chat {
+  id         String @id @default(uuid())
+  receiverId String
+  senderId   String
 
-  @@unique([identifier, token])
+  messagesAsReceiver Message[] @relation("chatAsReceiver")
+  messagesAsSender   Message[] @relation("chatAsSender")
+
+  receiver User @relation("userAsReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  sender   User @relation("userAsSender", fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([receiverId])
+  @@index([senderId])
+}
+
+model Message {
+  id               String   @id @default(uuid())
+  content          String
+  timestamp        DateTime @default(now())
+  receiverId       String
+  senderId         String
+  chatAsReceiverId String?
+  chatAsSenderId   String?
+
+  seenIds String[]
+
+  receiver       User  @relation("userAsReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  sender         User  @relation("userAsSender", fields: [senderId], references: [id], onDelete: Cascade)
+  chatAsReceiver Chat? @relation("chatAsReceiver", fields: [chatAsReceiverId], references: [id])
+  chatAsSender   Chat? @relation("chatAsSender", fields: [chatAsSenderId], references: [id])
+
+  @@index([receiverId])
+  @@index([senderId])
+  @@index([chatAsReceiverId])
+  @@index([chatAsSenderId])
 }

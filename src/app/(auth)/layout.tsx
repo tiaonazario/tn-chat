@@ -1,5 +1,6 @@
 import { Sidebar } from '@/components/common/sidebar'
 import { getSessionUser } from '@/lib/auth'
+import Image from 'next/image'
 import { notFound } from 'next/navigation'
 
 export default async function RootLayout({
@@ -15,7 +16,8 @@ export default async function RootLayout({
       <Sidebar sessionUser={sessionUser} />
 
       <div className="flex flex-1 flex-col p-4">
-        <div className="border-b">
+        <div className="flex items-center gap-2 border-b">
+          <Image src="/chat-message.svg" width={40} height={40} alt="logo" />
           <h1>
             👋 Hey, <strong>{sessionUser.name}</strong>!
           </h1>

@@ -2,42 +2,54 @@
 
 import { SendHorizontal } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
+import { v4 as uuidV4 } from 'uuid'
+import { api } from '@/lib/axios'
 
 import { ChatMessage } from '@/components/common/chat/message'
-import { TMessageAuthor, TMessageStatus } from '@/types/message'
+import { TMessageStatus, IMessageWithAuthor } from '@/types/message'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { dateFormatter } from '@/lib/utils'
+import { TSchemaMessagePost } from '@/schemas/message'
+import { useHandleState } from '@/hooks/handle-state'
 
-// interface ChatWidgetProps {
-
-// }
-
-interface IMessage {
-  id: string
-  author: TMessageAuthor
-  content: string
-  status: TMessageStatus
-  timestamp: Date
+interface ChatWidgetProps {
+  chatId: string
+  initialMessages: IMessageWithAuthor[]
+  receiverId: string
+  senderId: string
 }
 
-export const ChatWidget = () => {
-  const [message, setMessage] = useState('')
-  const [messages, setMessages] = useState<IMessage[]>([
-    {
-      id: 'message-01',
-      author: 'me',
-      content: 'Hello, how are you?',
-      status: 'sent',
-      timestamp: new Date(),
-    },
-    {
-      id: 'message-02',
-      author: 'partner',
-      content: 'https://avatars.githubusercontent.com/u/8683378?v=4',
-      status: 'sent',
-      timestamp: new Date(),
-    },
-  ])
+export const ChatWidget = ({
+  chatId,
+  initialMessages,
+  receiverId,
+  senderId,
+}: ChatWidgetProps) => {
+  const [content, setContent] = useState('')
+  const [messages, setMessages] =
+    useState<IMessageWithAuthor[]>(initialMessages)
+  const [unreadMessages, setUnreadMessages] =
+    useState<IMessageWithAuthor[]>(initialMessages)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const { replaceState } = useHandleState<IMessageWithAuthor>()
+
+  const groupMessagesByDay = () => {
+    const groupedMessages: { [key: string]: IMessageWithAuthor[] } = {}
+
+    messages.forEach((message) => {
+      const dateString = dateFormatter(message.timestamp)
+
+      if (!groupedMessages[dateString]) {
+        groupedMessages[dateString] = []
+      }
+
+      groupedMessages[dateString].push(message)
+    })
+
+    return groupedMessages
+  }
+
+  const groupedMessages = groupMessagesByDay()
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -45,24 +57,79 @@ export const ChatWidget = () => {
       const scrollHeight = textareaRef.current.scrollHeight
       textareaRef.current.style.height = scrollHeight + 'px'
     }
-  }, [message, textareaRef])
+  }, [content, textareaRef])
 
-  const handleSubmitNewMessage = async () => {
-    // Your code here
+  useEffect(() => {
+    const handleCheckSeen = async () => {
+      await api
+        .put('/api/message', { chatId, seenIds: [receiverId, senderId] })
+        .catch((error) => {
+          console.error(error)
+        })
+    }
+
+    if (unreadMessages.length > 0) {
+      handleCheckSeen()
+    }
+  }, [chatId, receiverId, senderId, unreadMessages.length])
+
+  const checkSeen = (message: IMessageWithAuthor): TMessageStatus => {
+    if (!message.status) {
+      const seen =
+        message.author === 'sender'
+          ? message.seenIds.includes(message.receiverId)
+          : message.seenIds.includes(message.senderId)
+
+      if (!seen && message.author === 'receiver') {
+        setUnreadMessages((prev) => [...prev, message])
+      }
+
+      return seen ? 'seen' : 'sent'
+    }
+
+    return message.status
+  }
+
+  const handleSubmitNewMessage = async (message: IMessageWithAuthor) => {
+    const body: TSchemaMessagePost = {
+      content: message.content,
+      receiverId: message.receiverId,
+      senderId: message.senderId,
+      chatAsSenderId: message.chatAsSenderId,
+      seenIds: message.seenIds,
+    }
+
+    await api
+      .post('/api/message', body)
+      .then(() => {
+        setMessages(
+          replaceState({ ...message, status: 'sent' }, [...messages, message]),
+        )
+      })
+      .catch((error) => {
+        setMessages(replaceState({ ...message, status: 'error' }, messages))
+        console.error(error)
+      })
   }
 
   const handleOnSubmit = async () => {
-    if (message.trim() !== '') {
-      const newMessage: IMessage = {
-        id: `message-${messages.length}`,
-        author: 'me',
-        content: message,
-        status: 'error',
+    if (content.trim() !== '') {
+      const message: IMessageWithAuthor = {
+        id: uuidV4(),
+        content,
         timestamp: new Date(),
+        seenIds: [senderId],
+        author: 'sender',
+        status: 'sending',
+        senderId,
+        chatAsReceiverId: uuidV4(),
+        chatAsSenderId: chatId,
+        receiverId,
       }
-      setMessages((prev) => [...prev, newMessage])
-      setMessage('')
-      handleSubmitNewMessage()
+
+      setMessages([...messages, message])
+      setContent('')
+      await handleSubmitNewMessage(message)
     }
   }
 
@@ -77,14 +144,21 @@ export const ChatWidget = () => {
     <div className="flex max-h-[550px] flex-1 flex-col">
       <ScrollArea className="flex-1 p-2">
         <div className="flex flex-1 flex-col gap-2 p-2">
-          {messages.map((message) => (
-            <ChatMessage
-              key={message.id}
-              author={message.author}
-              content={message.content}
-              status={message.status}
-              timestamp={message.timestamp}
-            />
+          {Object.keys(groupedMessages).map((day) => (
+            <div className="flex w-full flex-col gap-2" key={day}>
+              <h3 className="my-2 max-w-max self-center border p-1 text-center">
+                {day}
+              </h3>
+              {groupedMessages[day].map((message) => (
+                <ChatMessage
+                  key={message.id}
+                  author={message.author}
+                  content={message.content}
+                  status={checkSeen(message)}
+                  timestamp={message.timestamp}
+                />
+              ))}
+            </div>
           ))}
         </div>
       </ScrollArea>
@@ -93,8 +167,8 @@ export const ChatWidget = () => {
           ref={textareaRef}
           onKeyUp={handleTextKeyUp}
           placeholder="Type a message"
-          value={message}
-          onChange={(event) => setMessage(event.target.value)}
+          value={content}
+          onChange={(event) => setContent(event.target.value)}
           className="flex max-h-40 min-h-[2.5rem] w-full resize-none rounded border
             border-input bg-transparent py-2 pl-3 pr-10 text-sm shadow-sm
             placeholder:text-muted-foreground focus-visible:outline-none
@@ -108,7 +182,7 @@ export const ChatWidget = () => {
           focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring
           disabled:pointer-events-none disabled:opacity-50"
           onClick={handleOnSubmit}
-          disabled={message.trim() === ''}
+          disabled={content.trim() === ''}
         >
           <SendHorizontal className="h-6 w-6" />
         </button>

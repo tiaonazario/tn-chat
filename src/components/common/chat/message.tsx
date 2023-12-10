@@ -52,16 +52,16 @@ export const ChatMessage = ({
     <div
       className={cn(
         'flex',
-        author === 'me' && 'justify-end',
-        author === 'partner' && 'justify-start',
+        author === 'sender' && 'justify-end',
+        author === 'receiver' && 'justify-start',
       )}
     >
       <div className={cn('flex max-w-[80%] flex-col items-end gap-0.5')}>
         <p
           className={cn(
             'w-full whitespace-pre-line rounded p-1.5',
-            author === 'me' && 'bg-primary/50 text-primary-foreground',
-            author === 'partner' && 'bg-secondary text-secondary-foreground',
+            author === 'sender' && 'bg-primary/50 text-primary-foreground',
+            author === 'receiver' && 'bg-secondary text-secondary-foreground',
           )}
         >
           {renderContent()}
