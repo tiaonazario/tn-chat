@@ -21,7 +21,6 @@ export default async function RootLayout({
           {chats.map((chat) => (
             <ChatBoxView
               key={chat.id}
-              chatId={chat.id}
               message={lastMessageSent(chat)}
               unreadMessage={amountUnreadMessages(chat)}
               senderId={chat.senderId}

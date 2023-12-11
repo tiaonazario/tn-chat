@@ -29,8 +29,17 @@ export async function getChat(chatId: string) {
   const sessionUser = await getSessionUser()
   if (!sessionUser) notFound()
 
-  const chat = await db.chat.findUnique({
-    where: { id: chatId },
+  const [userId1, userId2] = chatId.split('--')
+  if (sessionUser.id !== userId1 && sessionUser.id !== userId2) notFound()
+
+  const receiverId = userId1 !== sessionUser.id ? userId1 : userId2
+  const senderId = userId1 === sessionUser.id ? userId1 : userId2
+
+  const chat = await db.chat.findFirst({
+    where: {
+      receiverId,
+      senderId,
+    },
     include: {
       receiver: true,
       messagesAsReceiver: true,

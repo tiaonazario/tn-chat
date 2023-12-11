@@ -29,7 +29,7 @@ export default async function ChatPage({ params }: ChatPageProps) {
       </div>
 
       <ChatWidget
-        chatId={params.chatId}
+        chatId={chat.id}
         initialMessages={chat.messages}
         receiverId={chat.receiverId}
         senderId={chat.senderId}

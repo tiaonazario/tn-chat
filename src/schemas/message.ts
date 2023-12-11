@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 export const schemaMessagePost = z.object({
-  chatAsSenderId: z.string().uuid(),
+  chatAsSenderId: z.string().uuid().nullable(),
   content: z.string().min(1),
   receiverId: z.string().uuid(),
   seenIds: z.array(z.string().uuid()),

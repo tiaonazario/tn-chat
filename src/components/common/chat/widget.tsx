@@ -8,9 +8,10 @@ import { api } from '@/lib/axios'
 import { ChatMessage } from '@/components/common/chat/message'
 import { TMessageStatus, IMessageWithAuthor } from '@/types/message'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { dateFormatter } from '@/lib/utils'
+import { chatHrefConstructor, dateFormatter } from '@/lib/utils'
 import { TSchemaMessagePost } from '@/schemas/message'
 import { useHandleState } from '@/hooks/handle-state'
+import { pusherClient } from '@/lib/pusher'
 
 interface ChatWidgetProps {
   chatId: string
@@ -31,7 +32,9 @@ export const ChatWidget = ({
   const [unreadMessages, setUnreadMessages] =
     useState<IMessageWithAuthor[]>(initialMessages)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
-  const { replaceState } = useHandleState<IMessageWithAuthor>()
+  const { replaceState, findStateById } = useHandleState<IMessageWithAuthor>()
+
+  const chatHref = chatHrefConstructor(receiverId, senderId)
 
   const groupMessagesByDay = () => {
     const groupedMessages: { [key: string]: IMessageWithAuthor[] } = {}
@@ -58,6 +61,28 @@ export const ChatWidget = ({
       textareaRef.current.style.height = scrollHeight + 'px'
     }
   }, [content, textareaRef])
+
+  useEffect(() => {
+    pusherClient.subscribe(chatHref)
+    const handleMessage = (message: IMessageWithAuthor) => {
+      const messageFound = findStateById(message.id, messages)
+      if (!messageFound) {
+        const newMessage: IMessageWithAuthor = {
+          ...message,
+          timestamp: new Date(message.timestamp),
+          author: senderId === message.senderId ? 'sender' : 'receiver',
+        }
+        setMessages([...messages, newMessage])
+      }
+    }
+
+    pusherClient.bind('message:new', handleMessage)
+
+    return () => {
+      pusherClient.unsubscribe(chatHref)
+      pusherClient.unbind('message:new', handleMessage)
+    }
+  }, [chatHref, findStateById, messages, senderId])
 
   useEffect(() => {
     const handleCheckSeen = async () => {

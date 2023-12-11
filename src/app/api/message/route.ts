@@ -1,4 +1,6 @@
 import { db } from '@/lib/prisma'
+import { pusherServer } from '@/lib/pusher'
+import { chatHrefConstructor } from '@/lib/utils'
 import { schemaMessagePost, schemaMessagePut } from '@/schemas/message'
 import { NextResponse, NextRequest } from 'next/server'
 
@@ -6,6 +8,8 @@ export async function POST(request: NextRequest) {
   const data = await request.json()
   const { chatAsSenderId, content, receiverId, seenIds, senderId } =
     schemaMessagePost.parse(data)
+
+  const chatHref = chatHrefConstructor(receiverId, senderId)
 
   const chatAsReceiver = await db.chat.findFirst({
     where: {
@@ -33,6 +37,8 @@ export async function POST(request: NextRequest) {
       },
     })
 
+    await pusherServer.trigger(chatHref, 'message:new', message)
+
     return NextResponse.json({ message })
   }
 
@@ -46,6 +52,8 @@ export async function POST(request: NextRequest) {
       seenIds,
     },
   })
+
+  await pusherServer.trigger(chatHref, 'message:new', message)
 
   return NextResponse.json({ message })
 }

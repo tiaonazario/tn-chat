@@ -41,8 +41,8 @@ export const amountUnreadMessages = (chat: IGetChats) => {
 }
 
 export const lastMessageSent = (chat: IGetChats) => {
-  const messagesAsSenderSize = chat.messagesAsReceiver.length
   const messagesAsReceiverSize = chat.messagesAsReceiver.length
+  const messagesAsSenderSize = chat.messagesAsSender.length
 
   const lastMessagesAsSender =
     messagesAsSenderSize > 0

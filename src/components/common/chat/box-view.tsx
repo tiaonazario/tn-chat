@@ -1,16 +1,20 @@
 'use client'
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { dateFormatter, getFallbackName, truncateWord } from '@/lib/utils'
+import {
+  chatHrefConstructor,
+  dateFormatter,
+  getFallbackName,
+  truncateWord,
+} from '@/lib/utils'
 import { Message } from '@prisma/client'
 import { usePathname, useRouter } from 'next/navigation'
 import { useState } from 'react'
 
 interface ChatBoxViewProps {
-  chatId: string
   message: Message | null
-  unreadMessage: number
   senderId: string
+  unreadMessage: number
   user: {
     id: string
     name: string
@@ -19,14 +23,16 @@ interface ChatBoxViewProps {
 }
 
 export const ChatBoxView = ({
-  chatId,
   message,
+  senderId,
   unreadMessage,
   user,
 }: ChatBoxViewProps) => {
   const { push } = useRouter()
   const [readMessage, setReadMessage] = useState(false)
   const pathname = usePathname()
+
+  const chatId = chatHrefConstructor(user.id, senderId)
   const destinationUrl = `/chat/${chatId}`
 
   const handleOpenChat = () => {

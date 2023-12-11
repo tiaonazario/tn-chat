@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { ISessionUser } from '@/types/session-user'
 import { useRouter } from 'next/navigation'
 import { api } from '@/lib/axios'
+import { chatHrefConstructor } from '@/lib/utils'
 
 interface UserCardProps {
   sessionUser: ISessionUser
@@ -21,7 +22,8 @@ export const UserCard = ({ sessionUser, user }: UserCardProps) => {
 
   const handleOpenChat = async () => {
     if (chat) {
-      push(`/chat/${chat.id}`)
+      const chatHref = chatHrefConstructor(chat.receiverId, chat.senderId)
+      push(`/chat/${chatHref}`)
     } else {
       await api
         .post<{ chatAsSender: Chat }>('/api/chat', {

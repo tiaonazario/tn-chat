@@ -14,7 +14,7 @@ export default function Home() {
             className=""
             height={68}
             width={68}
-            src="/chat-message.svg"
+            src="/tn-chat.svg"
             alt="logo"
           />
         </div>

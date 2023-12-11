@@ -26,3 +26,7 @@ export const dateFormatter = (
 export function truncateWord(word: string) {
   return word.length > 25 ? word.slice(0, 25) + '...' : word
 }
+
+export function chatHrefConstructor(id1: string, id2: string) {
+  return [id1, id2].sort().join('--')
+}

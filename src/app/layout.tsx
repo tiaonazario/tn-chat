@@ -7,8 +7,8 @@ const roboto = Roboto({ weight: ['400', '500', '700'], subsets: ['latin'] })
 
 export const metadata: Metadata = {
   title: {
-    default: 'Chat Message',
-    template: '%s | Chat Message',
+    default: 'TN Chat',
+    template: '%s | TN Chat',
   },
   robots: {
     index: true,

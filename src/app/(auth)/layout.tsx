@@ -17,7 +17,7 @@ export default async function RootLayout({
 
       <div className="flex flex-1 flex-col p-4">
         <div className="flex items-center gap-2 border-b">
-          <Image src="/chat-message.svg" width={40} height={40} alt="logo" />
+          <Image src="/tn-chat.svg" width={40} height={40} alt="logo" />
           <h1>
             👋 Hey, <strong>{sessionUser.name}</strong>!
           </h1>

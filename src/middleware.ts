@@ -3,9 +3,9 @@ import { NextResponse } from 'next/server'
 
 export default withAuth(
   function middleware(request) {
-    if (!request.nextauth.token) {
+    if (!request.nextauth.token && request.nextUrl.pathname !== '/') {
       return NextResponse.rewrite(new URL('/unauthorized', request.url))
-    } else if (request.nextUrl.pathname === '/') {
+    } else if (request.nextauth.token && request.nextUrl.pathname === '/') {
       return NextResponse.redirect(new URL('/general', request.url))
     }
   },
@@ -20,7 +20,7 @@ export default withAuth(
 
 export const config = {
   matcher: [
-    // '/',
+    '/',
     '/chat/:path*',
     '/general/:path*',
     '/users/:path*',
